@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live-Bildschirmstream</title>
+    <!-- Tailwind CSS CDN -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+        .video-stream-wrapper {
+            width: 100%;
+            max-width: 800px; /* Max width for the video */
+            margin: 0 auto;
+            border: 2px solid #6366f1; /* indigo-600 */
+            border-radius: 0.75rem;
+            overflow: hidden; /* Ensures rounded corners apply to the image */
+        }
+        #videoFeed {
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Remove extra space below image */
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 500;
+            color: #ffffff;
+            text-align: center;
+            background-color: #ef4444; /* red-500 for error */
+        }
+        #videoContainer{
+            width: auto;
+            height: auto;
+        }
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;  /* make sure that it is above other elements */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Live-Screen Share </h1>
+        <p class="text-gray-600 mb-8">Real Time Screen Share.</p>
+
+        <div id="videoContainer">
+            <!-- The src attribute points to your Flask video feed endpoint -->
+            <img id="videoFeed" src="http://10.101.111.18:5000/video_feed" alt="Live Screen Stream">
+        </div>
+        <button id="toggleFullscreen" class="message-box hidden">Full Screen</button>
+
+        <div id="statusMessage" class="message-box hidden">
+            Es Funktioniert!.
+        </div>
+    </div>
+
+    <script>
+        const videoFeedElement = document.getElementById('videoFeed');
+        const toggleFullScreenButton = document.getElementById('toggleFullscreen');
+        const statusMessageElement = document.getElementById('statusMessage');
+        toggleFullScreenButton.addEventListener('click', function (){
+            if(!document.fullscreenElement){
+                videoFeedElement.requestFullscreen().catch(err=>{
+                    console.error(`Error attempting to enable full screen: ${err.message} ${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        })
+
+        // Basic error handling for the image stream
+        videoFeedElement.onerror = () => {
+            statusMessageElement.classList.remove('hidden');
+            console.error("Failed to load video feed. Ensure Flask server is running at http://localhost:5000");
+        };
+
+        videoFeedElement.onload = () => {
+            statusMessageElement.classList.add('hidden'); // Hide message if stream loads successfully
+        };
+
+        // Optional: Periodically check if the server is reachable
+        // This is a simple check and might not cover all network issues.
+        setInterval(async () => {
+            try {
+                const response = await fetch('http://10.101.111.18:5000/video_feed', { method: 'HEAD' });
+                if (response.ok) {
+                    statusMessageElement.classList.add('hidden');
+                } else {
+                    statusMessageElement.classList.remove('hidden');
+                }
+            } catch (error) {
+                statusMessageElement.classList.remove('hidden');
+            }
+        }, 5000); // Check every 5 seconds
+    </script>
+</body>
+</html>
